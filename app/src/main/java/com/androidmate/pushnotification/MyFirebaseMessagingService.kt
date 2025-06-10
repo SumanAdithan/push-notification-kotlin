@@ -11,14 +11,16 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import java.util.UUID
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Log.d("FCM", "Message Received: ${remoteMessage.data}")
-        remoteMessage.notification?.let {
-            sendNotification(it.title, it.body)
-        }
+
+        val title = remoteMessage.data["title"]
+        val body = remoteMessage.data["body"]
+        sendNotification(title, body)
     }
 
     override fun onNewToken(token: String) {
@@ -27,10 +29,28 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun sendNotification(title: String?, message: String?) {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val notificationId = UUID.randomUUID().hashCode()
+
+        val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+            PendingIntent.FLAG_IMMUTABLE
+        else 0
+
+        val acceptIntent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra("FROM_NOTIFICATION", true)
+            putExtra("ACTION_TYPE", "ACCEPT")
+            putExtra("NOTIFICATION_ID", notificationId)
         }
-        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE)
+        val acceptPendingIntent = PendingIntent.getActivity(this, notificationId + 1, acceptIntent, flag)
+
+        val rejectIntent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra("FROM_NOTIFICATION", true)
+            putExtra("ACTION_TYPE", "REJECT")
+            putExtra("NOTIFICATION_ID", notificationId)
+        }
+        val rejectPendingIntent = PendingIntent.getActivity(this, notificationId + 2, rejectIntent, flag)
+
 
         val channelId = "default_channel"
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
@@ -40,7 +60,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setContentText(message ?: "")
             .setAutoCancel(true)
             .setSound(defaultSoundUri)
-            .setContentIntent(pendingIntent)
+            .addAction(0, "ACCEPT", acceptPendingIntent)
+            .addAction(0, "REJECT", rejectPendingIntent)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -49,6 +70,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        notificationManager.notify(0, notificationBuilder.build())
+        Log.d("notificationId: ","notificationId: $notificationId")
+
+        notificationManager.notify(notificationId, notificationBuilder.build())
     }
+
 }
