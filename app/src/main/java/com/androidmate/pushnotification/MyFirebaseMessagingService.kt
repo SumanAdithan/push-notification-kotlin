@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -52,21 +53,34 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val rejectPendingIntent = PendingIntent.getActivity(this, notificationId + 2, rejectIntent, flag)
 
 
-        val channelId = "default_channel"
-        val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        val channelId = "custom_channel_2025"
+        val soundUri = Uri.parse("android.resource://${packageName}/raw/custom_notification")
+        Log.d("SoundURI", "Using sound URI: $soundUri")
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title ?: "FCM")
             .setContentText(message ?: "")
             .setAutoCancel(true)
-            .setSound(defaultSoundUri)
+            .setSound(soundUri)
             .addAction(0, "ACCEPT", acceptPendingIntent)
             .addAction(0, "REJECT", rejectPendingIntent)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "Default Channel", NotificationManager.IMPORTANCE_DEFAULT)
+            val soundAttributes = android.media.AudioAttributes.Builder()
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+                .build()
+
+            val channel = NotificationChannel(
+                channelId,
+                "custom_channel_2025",
+                NotificationManager.IMPORTANCE_HIGH // use HIGH if you want sound to always play
+            ).apply {
+                setSound(soundUri, soundAttributes)
+            }
+
             notificationManager.createNotificationChannel(channel)
         }
 
