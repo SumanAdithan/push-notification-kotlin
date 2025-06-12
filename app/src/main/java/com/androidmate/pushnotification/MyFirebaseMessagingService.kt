@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.util.Log
@@ -32,9 +31,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private fun sendNotification(title: String?, message: String?) {
         val notificationId = UUID.randomUUID().hashCode()
 
-        val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-            PendingIntent.FLAG_IMMUTABLE
-        else 0
+        val flag = PendingIntent.FLAG_IMMUTABLE
 
         val acceptIntent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -67,7 +64,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val soundAttributes = android.media.AudioAttributes.Builder()
                 .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
@@ -82,7 +78,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             }
 
             notificationManager.createNotificationChannel(channel)
-        }
 
         Log.d("notificationId: ","notificationId: $notificationId")
 
