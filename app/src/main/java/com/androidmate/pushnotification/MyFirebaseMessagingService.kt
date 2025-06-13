@@ -69,15 +69,37 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
                 .build()
 
-            val channel = NotificationChannel(
-                channelId,
-                "custom_channel_2025",
-                NotificationManager.IMPORTANCE_HIGH // use HIGH if you want sound to always play
-            ).apply {
-                setSound(soundUri, soundAttributes)
-            }
+//            val channel = NotificationChannel(
+//                channelId,
+//                "custom_channel_2025",
+//                NotificationManager.IMPORTANCE_HIGH // use HIGH if you want sound to always play
+//            ).apply {
+//                setSound(soundUri, soundAttributes)
+//            }
 
-            notificationManager.createNotificationChannel(channel)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val existingChannel = notificationManager.getNotificationChannel(channelId)
+            if (existingChannel == null) {
+                val soundAttributes = android.media.AudioAttributes.Builder()
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+                    .build()
+
+                val channel = NotificationChannel(
+                    channelId,
+                    "Call Notifications",
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    setSound(soundUri, soundAttributes)
+                    enableVibration(true)
+                }
+
+                notificationManager.createNotificationChannel(channel)
+            }
+        }
+
+
+//        notificationManager.createNotificationChannel(channel)
 
         Log.d("notificationId: ","notificationId: $notificationId")
 
